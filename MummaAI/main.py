@@ -89,7 +89,7 @@ def processText(text):
         exit()
     else:
         try:
-            genai.configure(api_key="AIzaSyAnt5L_###########################")  
+            genai.configure(api_key="############################")  
             model = genai.GenerativeModel("gemini-1.5-flash")
             response = model.generate_content(text)
             speak(response.text.strip())
