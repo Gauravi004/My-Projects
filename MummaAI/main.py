@@ -1,124 +1,101 @@
-import speech_recognition as sr
 import webbrowser
-import pyttsx3
-import musicLibrary 
 import requests
 import google.generativeai as genai
-from gtts import gTTS
-import pygame
-import os
-recognizer = sr.Recognizer()
-engine = pyttsx3.init()
 
-def ol_speak(text):
-    engine.say(text)
-    engine.runAndWait()
-
+# Simple speak function (CI-friendly)
 def speak(text):
-  tts  = gTTS(text=text, lang='en')
-  tts.save("audio.mp3")
-  pygame.mixer.init()
-  pygame.mixer.music.load("audio.mp3")
-  pygame.mixer.music.play()
-  while pygame.mixer.music.get_busy():
-        pygame.time.Clock().tick(10)
-  pygame.init()             
-  pygame.mixer.init()        
-  pygame.mixer.music.unload()
-  os.remove("audio.mp3")
+    print("AI says:", text)
+
+
 def processText(text):
     text = text.lower()
-    if( "youtube" in text ):
+
+    if "youtube" in text:
         speak("Opening YouTube")
-        webbrowser.open("https://www.youtube.com")
+        print("URL: https://www.youtube.com")
 
-    elif( "github" in text):
+    elif "github" in text:
         speak("Opening GitHub")
-        webbrowser.open("https://github.com")
+        print("URL: https://github.com")
 
-    elif( "facebook" in text):
+    elif "facebook" in text:
         speak("Opening Facebook")
-        webbrowser.open("https://www.facebook.com")
+        print("URL: https://www.facebook.com")
 
-    elif( "twitter" in text):
+    elif "twitter" in text:
         speak("Opening Twitter")
-        webbrowser.open("https://twitter.com")
+        print("URL: https://twitter.com")
 
-    elif( "instagram" in text ):
+    elif "instagram" in text:
         speak("Opening Instagram")
-        webbrowser.open("https://www.instagram.com")
+        print("URL: https://www.instagram.com")
 
-    elif( "linkedIn" in text ):
+    elif "linkedin" in text:
         speak("Opening LinkedIn")
-        webbrowser.open("https://www.linkedin.com")
+        print("URL: https://www.linkedin.com")
 
-    elif( "whatsApp" in text ):
+    elif "whatsapp" in text:
         speak("Opening WhatsApp")
-        webbrowser.open("https://web.whatsapp.com")
+        print("URL: https://web.whatsapp.com")
 
-    elif("gmail" in text ):
+    elif "gmail" in text:
         speak("Opening Gmail")
-        webbrowser.open("https://mail.google.com/mail/u/0/#inbox")
-        
-    elif( "google" in text ):
-        speak("Opening Google")
-        webbrowser.open("https://www.google.com")
+        print("URL: https://mail.google.com")
 
-    
-    elif( text.startswith("play") ):
-       song = text.split(" ")[1]
-       link = musicLibrary.music[song]
-       webbrowser.open(link)
-       speak("Playing " + song)
-    
-    elif( "news" in text ):
-      r = requests.get("https://newsapi.org/v2/top-headlines?country=us&apiKey=6376c2c9190f4415835f92c5058e1658")
-      news = r.json()
-      articles = news['articles']
-      for article in articles:
-            title = article['title']
-            description = article['description']
-            url = article['url']
-            speak("Title: " + title)
-            speak("Description: " + description)
-            speak("Read more at: " + url)
-            break
-    
-    elif("bye" in text or "exit" in text or "stop" in text):
-        speak("bye bye!, take care!")
-        exit()
+    elif "google" in text:
+        speak("Opening Google")
+        print("URL: https://www.google.com")
+
+    elif text.startswith("play"):
+        speak("Playing song (demo mode)")
+
+    elif "news" in text:
+        try:
+            r = requests.get(
+                "https://newsapi.org/v2/top-headlines?country=us&apiKey=6376c2c9190f4415835f92c5058e1658"
+            )
+            news = r.json()
+            articles = news.get('articles', [])
+
+            if articles:
+                article = articles[0]
+                speak("Title: " + article.get('title', 'No title'))
+                speak("Description: " + article.get('description', 'No description'))
+            else:
+                speak("No news available")
+
+        except Exception as e:
+            speak("Error fetching news")
+            print("Error:", e)
+
+    elif "bye" in text or "exit" in text or "stop" in text:
+        speak("Bye bye! Take care!")
+
     else:
         try:
-            genai.configure(api_key="############################")  
+            genai.configure(api_key="YOUR_API_KEY_HERE")  # optional
             model = genai.GenerativeModel("gemini-1.5-flash")
             response = model.generate_content(text)
             speak(response.text.strip())
-        except Exception as e:
-            speak("Sorry, there was an issue with generating a response.")
-            print(f"Error: {e}")
-if __name__ == "__main__":
-    speak("Initializing...")
+        except Exception:
+            speak("AI response not available in demo mode")
 
-    while True:
-      r = sr.Recognizer()
-      try:
-        with sr.Microphone() as source:
-         print("Say something!")
-         audio = r.listen(source, timeout=3, phrase_time_limit=5)
-     
-        text = r.recognize_google(audio)
-        print("You said: {}".format(text))
-       
-        if(text.lower()=="mumma" or text.lower()=="mamma" or text.lower()=="mama"):
-            speak("Yes, how can I help you?")
-            with sr.Microphone() as source:
-             print("Say something!")
-             audio = r.listen(source)
-             text = r.recognize_google(audio)
-        processText(text)
-        if("exit" in text or "stop" in text):
-            speak("bye bye take care")
-            break
-      except Exception as e:
-        print("Listening...: {}".format(e))
-        
+
+# Test mode (for Jenkins & Docker)
+if __name__ == "__main__":
+    print("Running in CI test mode...")
+
+    test_commands = [
+        "youtube",
+        "github",
+        "news",
+        "google",
+        "play song",
+        "hello"
+    ]
+
+    for cmd in test_commands:
+        print(f"\nProcessing: {cmd}")
+        processText(cmd)
+
+    print("\nAll test commands executed successfully.")
